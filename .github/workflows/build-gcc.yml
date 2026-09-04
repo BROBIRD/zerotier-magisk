@@ -2,6 +2,8 @@ name: build with GCC toolchains
 
 on:
   workflow_dispatch:
+  push:
+    tags: ['*']
 
 jobs:
   build:
@@ -58,6 +60,12 @@ jobs:
           name: zerotier-magisk-aarch64-gcc-zt${{ steps.ztversion.outputs.tag }}-${{ steps.commit.outputs.short }}
           path: magisk/
 
+      - name: Package AArch64 module zip
+        run: |
+          cd magisk
+          zip -r ../zerotier-magisk-aarch64-gcc-${{ github.ref_name }}.zip .
+          cd ..
+
       - name: Build for AArch64 with SSO
         run: |
           CC=aarch64-linux-gnu-gcc
@@ -75,6 +83,12 @@ jobs:
         with:
           name: zerotier-magisk-aarch64-gcc-SSO-zt${{ steps.ztversion.outputs.tag }}-${{ steps.commit.outputs.short }}
           path: magisk/
+
+      - name: Package AArch64 SSO module zip
+        run: |
+          cd magisk
+          zip -r ../zerotier-magisk-aarch64-gcc-SSO-${{ github.ref_name }}.zip .
+          cd ..
 
       - name: Build for Arm
         run: |
@@ -95,3 +109,16 @@ jobs:
         with:
           name: zerotier-magisk-arm-gcc-zt${{ steps.ztversion.outputs.tag }}-${{ steps.commit.outputs.short }}
           path: magisk/
+
+      - name: Package Arm module zip
+        run: |
+          cd magisk
+          zip -r ../zerotier-magisk-arm-gcc-${{ github.ref_name }}.zip .
+          cd ..
+
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          files: zerotier-magisk-*.zip

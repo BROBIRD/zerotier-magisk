@@ -2,6 +2,8 @@ name: build app
 
 on:
   workflow_dispatch:
+  push:
+    tags: ['*']
 
 jobs:
   build:
@@ -35,3 +37,13 @@ jobs:
         with:
           name: app-${{ steps.commit.outputs.short }}
           path: app/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Package APK
+        run: cp app/build/app/outputs/flutter-apk/app-release.apk zerotier-magisk-app-${{ github.ref_name }}.apk
+
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          files: zerotier-magisk-app-*.apk
