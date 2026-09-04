@@ -49,6 +49,82 @@ class ZerotierStatus {
   }
 }
 
+/// 网络本地配置应用方式
+enum NetworkConfigApplyResult {
+  /// 已通过本地API应用，立即生效
+  online,
+  /// 已写入local.conf，服务下次启动时生效
+  offline,
+  /// 应用失败
+  failure,
+}
+
+/// 网络本地配置，对应设备上的 `<network-id>`.local.conf
+///
+/// 文件为ZeroTier字典格式，每行一条 key=value
+class NetworkLocalConfig {
+  bool allowManaged;
+  bool allowGlobal;
+  bool allowDefault;
+  bool allowDNS;
+
+  /// allowManaged为IP白名单列表时的原始值，仅用于界面提示
+  String? managedWhitelist;
+
+  NetworkLocalConfig({
+    this.allowManaged = true,
+    this.allowGlobal = false,
+    this.allowDefault = false,
+    this.allowDNS = false,
+    this.managedWhitelist,
+  });
+
+  /// ZeroTier内置默认值
+  factory NetworkLocalConfig.defaults() => NetworkLocalConfig();
+
+  /// 从local.conf文本内容解析
+  factory NetworkLocalConfig.fromConf(String content) {
+    final config = NetworkLocalConfig.defaults();
+    for (final line in content.split('\n')) {
+      final text = line.trim();
+      if (text.isEmpty) continue;
+      final eq = text.indexOf('=');
+      if (eq <= 0) continue;
+      final key = text.substring(0, eq).trim();
+      final value = text.substring(eq + 1).trim();
+      final lower = value.toLowerCase();
+      final enabled = lower == '1' || lower == 'true' || lower == 't';
+      switch (key) {
+        case 'allowManaged':
+          // ZeroTier将超过5个字符的值视为IP白名单列表
+          if (value.length > 5) {
+            config.managedWhitelist = value;
+            config.allowManaged = true;
+          } else {
+            config.allowManaged = enabled;
+          }
+        case 'allowGlobal':
+          config.allowGlobal = enabled;
+        case 'allowDefault':
+          config.allowDefault = enabled;
+        case 'allowDNS':
+          config.allowDNS = enabled;
+      }
+    }
+    return config;
+  }
+
+  /// 生成local.conf文本内容
+  String toConf() {
+    final buffer = StringBuffer();
+    buffer.write('allowManaged=${allowManaged ? '1' : '0'}\n');
+    buffer.write('allowGlobal=${allowGlobal ? '1' : '0'}\n');
+    buffer.write('allowDefault=${allowDefault ? '1' : '0'}\n');
+    buffer.write('allowDNS=${allowDNS ? '1' : '0'}\n');
+    return buffer.toString();
+  }
+}
+
 /// ZeroTier服务，提供所有ZeroTier相关功能
 class ZerotierService {  
   final AuthService _authService = AuthService();
@@ -206,6 +282,115 @@ class ZerotierService {
     } catch (e) {
       developer.log('加入网络错误', error: e.toString());
       return false;
+    }
+  }
+
+  /// 读取指定网络的本地配置
+  ///
+  /// 优先级: 设备上的 `<network-id>`.local.conf 文件 > 运行时API > 内置默认值
+  Future<NetworkLocalConfig> loadNetworkConfig(String id) async {
+    final fromFile = await _readNetworkLocalConf(id);
+    if (fromFile != null) {
+      return fromFile;
+    }
+
+    // 文件不可用时回退到运行时设置
+    try {
+      final client = await _authService.client;
+      final resp = await client.get('/network/$id');
+      if (resp.statusCode == 200 && resp.data is Map<String, dynamic>) {
+        final data = resp.data as Map<String, dynamic>;
+        developer.log('已读取网络运行时配置: $id');
+        return NetworkLocalConfig(
+          allowManaged: data['allowManaged'] ?? true,
+          allowGlobal: data['allowGlobal'] ?? false,
+          allowDefault: data['allowDefault'] ?? false,
+          allowDNS: data['allowDNS'] ?? false,
+        );
+      }
+    } catch (e) {
+      developer.log('读取网络运行时配置失败: $id', error: e.toString());
+    }
+
+    return NetworkLocalConfig.defaults();
+  }
+
+  /// 通过Magisk模块读取设备上的 `<network-id>`.local.conf
+  Future<NetworkLocalConfig?> _readNetworkLocalConf(String id) async {
+    try {
+      final base = (await getApplicationDocumentsDirectory()).path;
+      final netconfDir = Directory('$base/run/netconf');
+      final current = File('${netconfDir.path}/$id.current');
+
+      // 清除旧响应，避免读到上一次的内容
+      if (await current.exists()) {
+        await current.delete();
+      }
+
+      if (!await zerotierCommand('netconf read $id')) {
+        return null;
+      }
+
+      // 等待模块（root）导出配置文件
+      for (int i = 0; i < 30; i++) {
+        await Future.delayed(const Duration(milliseconds: 100));
+        if (await current.exists()) {
+          final content = await current.readAsString();
+          // 空文件表示设备上尚无该网络的local.conf
+          if (content.trim().isEmpty) {
+            return null;
+          }
+          return NetworkLocalConfig.fromConf(content);
+        }
+      }
+      developer.log('等待导出local.conf超时: $id');
+      return null;
+    } catch (e) {
+      developer.log('读取local.conf失败: $id', error: e.toString());
+      return null;
+    }
+  }
+
+  /// 保存网络本地配置
+  ///
+  /// 服务运行时通过本地API立即生效，由zerotier-one自动持久化到local.conf；
+  /// 服务未运行时写入待装文件，由Magisk模块安装，下次启动生效
+  Future<NetworkConfigApplyResult> applyNetworkConfig(String id, NetworkLocalConfig config) async {
+    // 优先走本地API：立即生效且由服务自己持久化
+    try {
+      final client = await _authService.client;
+      final resp = await client.post('/network/$id', data: {
+        'allowManaged': config.allowManaged,
+        'allowGlobal': config.allowGlobal,
+        'allowDefault': config.allowDefault,
+        'allowDNS': config.allowDNS,
+      });
+      if (resp.statusCode == 200) {
+        runningStatus = true;
+        developer.log('网络配置已通过API应用: $id');
+        return NetworkConfigApplyResult.online;
+      }
+      developer.log('通过API应用网络配置失败: $id, 状态码: ${resp.statusCode}');
+    } catch (e) {
+      developer.log('通过API应用网络配置失败，回退到文件写入: $id', error: e.toString());
+    }
+
+    // 服务未运行：写入待装文件，通过模块管道安装
+    try {
+      final base = (await getApplicationDocumentsDirectory()).path;
+      final netconfDir = Directory('$base/run/netconf');
+      await netconfDir.create(recursive: true);
+      await File('${netconfDir.path}/$id.pending').writeAsString(config.toConf());
+
+      if (await zerotierCommand('netconf write $id')) {
+        developer.log('网络配置已写入local.conf: $id');
+        return NetworkConfigApplyResult.offline;
+      }
+      developer.log('发送netconf write命令失败: $id');
+      return NetworkConfigApplyResult.failure;
+    } catch (e) {
+      developer.log('写入网络配置失败: $id', error: e.toString());
+      return NetworkConfigApplyResult.failure;
     }
   }
 

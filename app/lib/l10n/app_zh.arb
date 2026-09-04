@@ -121,5 +121,45 @@
   "moduleNotRunning": "ZeroTier Magisk模块未运行，请检查您是否安装Zerotier Magisk模块。",
 
   "peerTunneled": "中继",
-  "peerDirect": "直连"
+  "peerDirect": "直连",
+
+  "networkConfigDialogTitle": "网络配置",
+  "editNetworkConfigTooltip": "编辑配置",
+  "networkConfigOfflineNote": "ZeroTier 服务未运行，配置将在下次启动时生效。",
+  "networkConfigWhitelistNote": "allowManaged 当前包含 IP 白名单，保存后将改为简单的开/关设置。",
+  "allowManagedLabel": "允许托管地址",
+  "allowManagedDesc": "允许 ZeroTier 配置托管的 IP 地址与路由",
+  "allowGlobalLabel": "允许全局地址",
+  "allowGlobalDesc": "允许 ZeroTier 分配公网（全局）范围的 IP 与路由",
+  "allowDefaultLabel": "允许默认路由",
+  "allowDefaultDesc": "允许 ZeroTier 接管系统默认路由（全隧道）",
+  "allowDNSLabel": "允许 DNS",
+  "allowDNSDesc": "允许 ZeroTier 设置 DNS 服务器",
+  "networkConfigAppliedText": "网络 {networkId} 的配置已生效。",
+  "@networkConfigAppliedText": {
+    "placeholders": {
+      "networkId": {
+        "type": "String",
+        "example": "1234567890abcdef"
+      }
+    }
+  },
+  "networkConfigSavedOfflineText": "网络 {networkId} 的配置已保存，将在服务启动后生效。",
+  "@networkConfigSavedOfflineText": {
+    "placeholders": {
+      "networkId": {
+        "type": "String",
+        "example": "1234567890abcdef"
+      }
+    }
+  },
+  "networkConfigApplyErrorText": "应用配置失败: {error}",
+  "@networkConfigApplyErrorText": {
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "服务无法连接"
+      }
+    }
+  }
 } 

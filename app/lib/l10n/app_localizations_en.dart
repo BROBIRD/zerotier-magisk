@@ -166,11 +166,68 @@ class AppLocalizationsEn extends AppLocalizations {
   String get serviceNotRunning => 'ZeroTier service is not running';
 
   @override
-  String get moduleNotRunning => 'ZeroTier Magisk module is not running. Please check if you have installed the ZeroTier Magisk module.';
+  String get moduleNotRunning =>
+      'ZeroTier Magisk module is not running. Please check if you have installed the ZeroTier Magisk module.';
 
   @override
   String get peerTunneled => 'Relayed';
 
   @override
   String get peerDirect => 'Direct';
+
+  @override
+  String get networkConfigDialogTitle => 'Network Configuration';
+
+  @override
+  String get editNetworkConfigTooltip => 'Edit configuration';
+
+  @override
+  String get networkConfigOfflineNote =>
+      'ZeroTier service is not running. Changes will take effect the next time it starts.';
+
+  @override
+  String get networkConfigWhitelistNote =>
+      'allowManaged contains an IP whitelist. Saving will replace it with a simple on/off setting.';
+
+  @override
+  String get allowManagedLabel => 'Allow Managed Addresses';
+
+  @override
+  String get allowManagedDesc =>
+      'Allow ZeroTier to assign managed IP addresses and routes';
+
+  @override
+  String get allowGlobalLabel => 'Allow Global Addresses';
+
+  @override
+  String get allowGlobalDesc =>
+      'Allow ZeroTier to assign public (global) IP addresses and routes';
+
+  @override
+  String get allowDefaultLabel => 'Allow Default Route';
+
+  @override
+  String get allowDefaultDesc =>
+      'Use this network as the system default route (full tunnel)';
+
+  @override
+  String get allowDNSLabel => 'Allow DNS';
+
+  @override
+  String get allowDNSDesc => 'Allow ZeroTier to configure DNS servers';
+
+  @override
+  String networkConfigAppliedText(String networkId) {
+    return 'Configuration of network $networkId applied.';
+  }
+
+  @override
+  String networkConfigSavedOfflineText(String networkId) {
+    return 'Configuration of network $networkId saved. It will take effect when the service starts.';
+  }
+
+  @override
+  String networkConfigApplyErrorText(String error) {
+    return 'Failed to apply configuration: $error';
+  }
 }

@@ -62,7 +62,8 @@ import 'app_localizations_zh.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -70,7 +71,8 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -82,7 +84,8 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
     delegate,
     GlobalMaterialLocalizations.delegate,
     GlobalCupertinoLocalizations.delegate,
@@ -394,9 +397,100 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Direct'**
   String get peerDirect;
+
+  /// No description provided for @networkConfigDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Network Configuration'**
+  String get networkConfigDialogTitle;
+
+  /// No description provided for @editNetworkConfigTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit configuration'**
+  String get editNetworkConfigTooltip;
+
+  /// No description provided for @networkConfigOfflineNote.
+  ///
+  /// In en, this message translates to:
+  /// **'ZeroTier service is not running. Changes will take effect the next time it starts.'**
+  String get networkConfigOfflineNote;
+
+  /// No description provided for @networkConfigWhitelistNote.
+  ///
+  /// In en, this message translates to:
+  /// **'allowManaged contains an IP whitelist. Saving will replace it with a simple on/off setting.'**
+  String get networkConfigWhitelistNote;
+
+  /// No description provided for @allowManagedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Managed Addresses'**
+  String get allowManagedLabel;
+
+  /// No description provided for @allowManagedDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow ZeroTier to assign managed IP addresses and routes'**
+  String get allowManagedDesc;
+
+  /// No description provided for @allowGlobalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Global Addresses'**
+  String get allowGlobalLabel;
+
+  /// No description provided for @allowGlobalDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow ZeroTier to assign public (global) IP addresses and routes'**
+  String get allowGlobalDesc;
+
+  /// No description provided for @allowDefaultLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Default Route'**
+  String get allowDefaultLabel;
+
+  /// No description provided for @allowDefaultDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this network as the system default route (full tunnel)'**
+  String get allowDefaultDesc;
+
+  /// No description provided for @allowDNSLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow DNS'**
+  String get allowDNSLabel;
+
+  /// No description provided for @allowDNSDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow ZeroTier to configure DNS servers'**
+  String get allowDNSDesc;
+
+  /// No description provided for @networkConfigAppliedText.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration of network {networkId} applied.'**
+  String networkConfigAppliedText(String networkId);
+
+  /// No description provided for @networkConfigSavedOfflineText.
+  ///
+  /// In en, this message translates to:
+  /// **'Configuration of network {networkId} saved. It will take effect when the service starts.'**
+  String networkConfigSavedOfflineText(String networkId);
+
+  /// No description provided for @networkConfigApplyErrorText.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to apply configuration: {error}'**
+  String networkConfigApplyErrorText(String error);
 }
 
-class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -405,25 +499,25 @@ class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> 
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['en', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-
-
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en': return AppLocalizationsEn();
-    case 'zh': return AppLocalizationsZh();
+    case 'en':
+      return AppLocalizationsEn();
+    case 'zh':
+      return AppLocalizationsZh();
   }
 
   throw FlutterError(
-    'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
-    'an issue with the localizations generation tool. Please file an issue '
-    'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
-  );
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
 }

@@ -166,11 +166,64 @@ class AppLocalizationsZh extends AppLocalizations {
   String get serviceNotRunning => 'ZeroTier服务未运行';
 
   @override
-  String get moduleNotRunning => 'ZeroTier Magisk模块未运行，请检查您是否安装Zerotier Magisk模块。';
+  String get moduleNotRunning =>
+      'ZeroTier Magisk模块未运行，请检查您是否安装Zerotier Magisk模块。';
 
   @override
   String get peerTunneled => '中继';
 
   @override
   String get peerDirect => '直连';
+
+  @override
+  String get networkConfigDialogTitle => '网络配置';
+
+  @override
+  String get editNetworkConfigTooltip => '编辑配置';
+
+  @override
+  String get networkConfigOfflineNote => 'ZeroTier 服务未运行，配置将在下次启动时生效。';
+
+  @override
+  String get networkConfigWhitelistNote =>
+      'allowManaged 当前包含 IP 白名单，保存后将改为简单的开/关设置。';
+
+  @override
+  String get allowManagedLabel => '允许托管地址';
+
+  @override
+  String get allowManagedDesc => '允许 ZeroTier 配置托管的 IP 地址与路由';
+
+  @override
+  String get allowGlobalLabel => '允许全局地址';
+
+  @override
+  String get allowGlobalDesc => '允许 ZeroTier 分配公网（全局）范围的 IP 与路由';
+
+  @override
+  String get allowDefaultLabel => '允许默认路由';
+
+  @override
+  String get allowDefaultDesc => '允许 ZeroTier 接管系统默认路由（全隧道）';
+
+  @override
+  String get allowDNSLabel => '允许 DNS';
+
+  @override
+  String get allowDNSDesc => '允许 ZeroTier 设置 DNS 服务器';
+
+  @override
+  String networkConfigAppliedText(String networkId) {
+    return '网络 $networkId 的配置已生效。';
+  }
+
+  @override
+  String networkConfigSavedOfflineText(String networkId) {
+    return '网络 $networkId 的配置已保存，将在服务启动后生效。';
+  }
+
+  @override
+  String networkConfigApplyErrorText(String error) {
+    return '应用配置失败: $error';
+  }
 }

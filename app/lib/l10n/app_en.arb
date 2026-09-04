@@ -121,5 +121,45 @@
   "moduleNotRunning": "ZeroTier Magisk module is not running. Please check if you have installed the ZeroTier Magisk module.",
 
   "peerTunneled": "Relayed",
-  "peerDirect": "Direct"
+  "peerDirect": "Direct",
+
+  "networkConfigDialogTitle": "Network Configuration",
+  "editNetworkConfigTooltip": "Edit configuration",
+  "networkConfigOfflineNote": "ZeroTier service is not running. Changes will take effect the next time it starts.",
+  "networkConfigWhitelistNote": "allowManaged contains an IP whitelist. Saving will replace it with a simple on/off setting.",
+  "allowManagedLabel": "Allow Managed Addresses",
+  "allowManagedDesc": "Allow ZeroTier to assign managed IP addresses and routes",
+  "allowGlobalLabel": "Allow Global Addresses",
+  "allowGlobalDesc": "Allow ZeroTier to assign public (global) IP addresses and routes",
+  "allowDefaultLabel": "Allow Default Route",
+  "allowDefaultDesc": "Use this network as the system default route (full tunnel)",
+  "allowDNSLabel": "Allow DNS",
+  "allowDNSDesc": "Allow ZeroTier to configure DNS servers",
+  "networkConfigAppliedText": "Configuration of network {networkId} applied.",
+  "@networkConfigAppliedText": {
+    "placeholders": {
+      "networkId": {
+        "type": "String",
+        "example": "1234567890abcdef"
+      }
+    }
+  },
+  "networkConfigSavedOfflineText": "Configuration of network {networkId} saved. It will take effect when the service starts.",
+  "@networkConfigSavedOfflineText": {
+    "placeholders": {
+      "networkId": {
+        "type": "String",
+        "example": "1234567890abcdef"
+      }
+    }
+  },
+  "networkConfigApplyErrorText": "Failed to apply configuration: {error}",
+  "@networkConfigApplyErrorText": {
+    "placeholders": {
+      "error": {
+        "type": "String",
+        "example": "Service not reachable"
+      }
+    }
+  }
 } 

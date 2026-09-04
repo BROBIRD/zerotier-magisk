@@ -191,6 +191,44 @@ class _NetworkPageState extends State<NetworkPage> {
       );
   }
 
+  Future<void> _showNetworkConfigEditor(String networkId) async {
+    final result = await showDialog<NetworkLocalConfig>(
+      context: context,
+      builder: (dialogContext) => _NetworkConfigDialog(
+        zerotierService: widget.zerotierService,
+        networkId: networkId,
+      ),
+    );
+
+    // result 为 null 表示用户取消
+    if (result == null || !mounted) return;
+
+    final l10n = AppLocalizations.of(context)!;
+    final applyResult = await widget.zerotierService.applyNetworkConfig(networkId, result);
+    if (!mounted) return;
+
+    if (applyResult == NetworkConfigApplyResult.online) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        text: l10n.networkConfigAppliedText(networkId),
+      );
+    } else if (applyResult == NetworkConfigApplyResult.offline) {
+      QuickAlert.show(
+        context: context,
+        type: QuickAlertType.success,
+        text: l10n.networkConfigSavedOfflineText(networkId),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.networkConfigApplyErrorText(l10n.moduleNotRunning)),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _idInputController.removeListener(_onTextChanged);
@@ -326,9 +364,15 @@ class _NetworkPageState extends State<NetworkPage> {
                                               backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
                                             ),
                                             title: Text(networkId, style: const TextStyle(fontFamily: 'monospace', letterSpacing: 0.8)),
+                                            onTap: _isLoading ? null : () => _showNetworkConfigEditor(networkId),
                                             trailing: Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
+                                                  IconButton(
+                                                      onPressed: _isLoading ? null : () => _showNetworkConfigEditor(networkId),
+                                                      tooltip: l10n.editNetworkConfigTooltip,
+                                                      icon: const Icon(Icons.tune, size: 20)
+                                                  ),
                                                   IconButton(
                                                       onPressed: _isLoading ? null : () {
                                                         Clipboard.setData(ClipboardData(text: networkId));
@@ -353,5 +397,118 @@ class _NetworkPageState extends State<NetworkPage> {
             ),
           ],
         ));
+  }
+}
+
+/// 网络配置编辑对话框，修改 `<network-id>`.local.conf 中的开关项
+class _NetworkConfigDialog extends StatefulWidget {
+  final ZerotierService zerotierService;
+  final String networkId;
+
+  const _NetworkConfigDialog({
+    required this.zerotierService,
+    required this.networkId,
+  });
+
+  @override
+  State<_NetworkConfigDialog> createState() => _NetworkConfigDialogState();
+}
+
+class _NetworkConfigDialogState extends State<_NetworkConfigDialog> {
+  NetworkLocalConfig? _config;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConfig();
+  }
+
+  Future<void> _loadConfig() async {
+    final config = await widget.zerotierService.loadNetworkConfig(widget.networkId);
+    if (mounted) {
+      setState(() {
+        _config = config;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final config = _config;
+
+    return AlertDialog(
+      title: Text(l10n.networkConfigDialogTitle),
+      content: config == null
+          ? const SizedBox(
+              height: 160,
+              width: double.maxFinite,
+              child: Center(child: CircularProgressIndicator.adaptive()),
+            )
+          : SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.networkId,
+                    style: const TextStyle(fontFamily: 'monospace', letterSpacing: 0.8),
+                  ),
+                  if (!widget.zerotierService.runningStatus) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.networkConfigOfflineNote,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                  if (config.managedWhitelist != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.networkConfigWhitelistNote,
+                      style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
+                  ],
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.allowManagedLabel),
+                    subtitle: Text(l10n.allowManagedDesc),
+                    value: config.allowManaged,
+                    onChanged: (value) => setState(() => config.allowManaged = value),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.allowGlobalLabel),
+                    subtitle: Text(l10n.allowGlobalDesc),
+                    value: config.allowGlobal,
+                    onChanged: (value) => setState(() => config.allowGlobal = value),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.allowDefaultLabel),
+                    subtitle: Text(l10n.allowDefaultDesc),
+                    value: config.allowDefault,
+                    onChanged: (value) => setState(() => config.allowDefault = value),
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.allowDNSLabel),
+                    subtitle: Text(l10n.allowDNSDesc),
+                    value: config.allowDNS,
+                    onChanged: (value) => setState(() => config.allowDNS = value),
+                  ),
+                ],
+              ),
+            ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(l10n.cancelButton),
+        ),
+        FilledButton(
+          onPressed: config == null ? null : () => Navigator.pop(context, config),
+          child: Text(l10n.confirmButton),
+        ),
+      ],
+    );
   }
 } 

@@ -60,6 +60,49 @@ _restart() {
   __start
   log "started zerotier-one"
 }
+_valid_nwid() {
+  # network ids are 16 lowercase hex characters
+  [ ${#1} -eq 16 ] || return 1
+  case "$1" in *[!0-9a-f]*) return 1;; esac
+  return 0
+}
+_netconf_read() {
+  # export <nwid>.local.conf to the app so it can be edited there
+  nwid=$1
+  if ! _valid_nwid "$nwid"; then
+    log "netconf read: invalid network id $nwid"
+    return
+  fi
+
+  mkdir -p $APPROOT/run/netconf
+  rm -f $APPROOT/run/netconf/$nwid.current
+
+  if [[ -f "$ZTROOT/home/networks.d/$nwid.local.conf" ]]; then
+    cp $ZTROOT/home/networks.d/$nwid.local.conf $APPROOT/run/netconf/$nwid.current
+  else
+    # empty marker tells the app that no local.conf exists yet
+    touch $APPROOT/run/netconf/$nwid.current
+  fi
+  chmod 666 $APPROOT/run/netconf/$nwid.current
+}
+_netconf_write() {
+  # install a <nwid>.local.conf prepared by the app, used while zerotier-one is not running
+  nwid=$1
+  if ! _valid_nwid "$nwid"; then
+    log "netconf write: invalid network id $nwid"
+    return
+  fi
+
+  src=$APPROOT/run/netconf/$nwid.pending
+  if [[ -f "$src" ]]; then
+    mkdir -p $ZTROOT/home/networks.d
+    cp $src $ZTROOT/home/networks.d/$nwid.local.conf
+    chmod 644 $ZTROOT/home/networks.d/$nwid.local.conf
+    log "netconf write: updated $nwid.local.conf"
+  else
+    log "netconf write: pending file missing for $nwid"
+  fi
+}
 
 # ----------------------------------------------
 #             call from inotifyd
@@ -74,6 +117,8 @@ if [[ $# == 2 && "$1" == "w" ]]; then
     "stop") _stop;;
     "restart") _restart;;
     "status") _status;;
+    "netconf read "*) _netconf_read "${cmd#netconf read }";;
+    "netconf write "*) _netconf_write "${cmd#netconf write }";;
     *) log "unknown command $cmd";;
   esac
 
