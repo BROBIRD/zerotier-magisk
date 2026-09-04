@@ -1,7 +1,11 @@
 allprojects {
     repositories {
-        maven { url 'https://maven.aliyun.com/repository/google' }
-        maven { url 'https://maven.aliyun.com/repository/public' }
+        // Aliyun mirrors are prepended for local builds only; CI keeps the stock repositories
+        if (!System.getenv('CI')) {
+            maven { url 'https://maven.aliyun.com/repository/google' }
+            maven { url 'https://maven.aliyun.com/repository/public' }
+        }
+        google()
         maven { url 'https://mirrors.tuna.tsinghua.edu.cn/flutter/download.flutter.io' }
         mavenCentral()
     }
