@@ -9,15 +9,20 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout zerotier-magisk
         uses: actions/checkout@v4
+
+      - name: Get latest ZeroTier release tag
+        id: ztversion
+        run: echo "tag=$(curl -fsSL https://api.github.com/repos/zerotier/ZeroTierOne/releases/latest | jq -r .tag_name)" >> "$GITHUB_OUTPUT"
 
       - name: Checkout ZeroTierOne
         uses: actions/checkout@v4
         with:
           repository: zerotier/ZeroTierOne
+          ref: ${{ steps.ztversion.outputs.tag }}
           path: ZeroTierOne
 
       - name: Checkout libnatpmp
@@ -64,7 +69,7 @@ jobs:
       - name: Upload AArch64
         uses: actions/upload-artifact@v4
         with:
-          name: zerotier-magisk-aarch64-ndk-${{ steps.commit.outputs.short }}
+          name: zerotier-magisk-aarch64-ndk-zt${{ steps.ztversion.outputs.tag }}-${{ steps.commit.outputs.short }}
           path: magisk/
 
       - name: Build for Arm
@@ -92,5 +97,5 @@ jobs:
       - name: Upload Arm
         uses: actions/upload-artifact@v4
         with:
-          name: zerotier-magisk-arm-ndk-${{ steps.commit.outputs.short }}
+          name: zerotier-magisk-arm-ndk-zt${{ steps.ztversion.outputs.tag }}-${{ steps.commit.outputs.short }}
           path: magisk/
