@@ -22,7 +22,7 @@
 
 2. 使用 GCC 编译的版本，静态链接到 Linux Syscall，兼容性未知
 
-均支持自建 planet；GCC AArch64 有支持 SSO (zeroidc) 的版本
+均支持自建 planet；GCC 与 NDK 的 AArch64 版本均有支持 SSO (zeroidc) 的版本
 
 AArch64 版本支持 ARMv8-A 及以上；Arm 版本均对 ARMv7-A 进行编译 (`-march=armv7-a`)
 

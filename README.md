@@ -22,7 +22,7 @@
 
 2. another version is build with GCC toolchain, linking to Linux Syscalls statically
 
-Unofficial planet supported; SSO (zeroidc) supported in the version built with GCC for AArch64
+Unofficial planet supported; SSO (zeroidc) supported in the AArch64 versions built with GCC and with NDK
 
 AArch64 suppots ARMv8-A and above; Arm version supports ARMv7-A (compiling with `-march=armv7-a`)
 

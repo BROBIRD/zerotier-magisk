@@ -40,7 +40,11 @@ jobs:
           wget -qO ndk.zip https://dl.google.com/android/repository/android-ndk-$ndk-linux.zip
           unzip -qq ndk.zip "android-ndk-$ndk/toolchains/*" && rm ndk.zip -f
 
+          rustup target add aarch64-linux-android
+
       - name: Patch ZeroTier for Cross-Compile
+        env:
+          ANDROID_API_VERSION: ${{ env.api_version }}
         run: |
           pip3 install toml
           python3 build/patch.py
@@ -77,6 +81,45 @@ jobs:
         run: |
           cd magisk
           zip -r ../zerotier-magisk-aarch64-ndk-${{ github.ref_name }}.zip .
+          cd ..
+
+      - name: Build for AArch64 with SSO
+        env:
+          ANDROID_NDK_ROOT: ${{ github.workspace }}/android-ndk-${{ env.ndk }}
+          ANDROID_NDK_HOME: ${{ github.workspace }}/android-ndk-${{ env.ndk }}
+          ANDROID_API: ${{ env.api_version }}
+          CC: aarch64-linux-android${{ env.api_version }}-clang
+          AR: llvm-ar
+          RANLIB: llvm-ranlib
+          CC_aarch64-linux-android: aarch64-linux-android${{ env.api_version }}-clang
+          AR_aarch64-linux-android: llvm-ar
+          RANLIB_aarch64-linux-android: llvm-ranlib
+        run: |
+          PATH=`pwd`/android-ndk-$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
+          NDK_ROOT=`pwd`/android-ndk-$ndk/toolchains/llvm/prebuilt/linux-x86_64
+
+          CC=aarch64-linux-android$api_version-clang
+          CXX=aarch64-linux-android$api_version-clang++
+
+          cd ZeroTierOne
+          mv make-linux.mk.ndk.sso make-linux.mk
+          make clean
+          make --silent -j $(nproc) ZT_DEBUG=0 ZT_SSO_SUPPORTED=1 CC=$CC CXX=$CXX LDFLAGS="-L../libnatpmp" DEFS="-I../libnatpmp -D__GLIBC__=0"
+          cd ..
+
+          cp ZeroTierOne/zerotier-one magisk/zerotier
+          cp $NDK_ROOT/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so magisk/zerotier/lib
+
+      - name: Upload AArch64 SSO
+        uses: actions/upload-artifact@v4
+        with:
+          name: zerotier-magisk-aarch64-ndk-SSO-zt${{ steps.ztversion.outputs.tag }}-${{ steps.commit.outputs.short }}
+          path: magisk/
+
+      - name: Package AArch64 SSO module zip
+        run: |
+          cd magisk
+          zip -r ../zerotier-magisk-aarch64-ndk-SSO-${{ github.ref_name }}.zip .
           cd ..
 
       - name: Build for Arm

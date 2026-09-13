@@ -1,4 +1,8 @@
+import os
 import toml
+
+# Android API level, used to name the NDK clang wrapper (aarch64-linux-android<api>-clang)
+android_api = os.environ.get('ANDROID_API_VERSION', '28')
 
 # Patch ZeroTierOne/rustybits/zeroidc/Cargo.toml
 
@@ -19,10 +23,13 @@ with open(cargo_toml_path, 'w') as f:
 # > +ZeroTierOne/rustybits/zeroidc/.cargo/config.toml
 # [target.aarch64-unknown-linux-gnu]
 # linker = "aarch64-linux-gnu-gcc"
+# [target.aarch64-linux-android]
+# linker = "aarch64-linux-android<api>-clang"
 
 config_toml_path = "ZeroTierOne/rustybits/zeroidc/.cargo/config.toml"
 config_toml = toml.load(config_toml_path)
 config_toml['target']['aarch64-unknown-linux-gnu'] = { "linker": "aarch64-linux-gnu-gcc" }
+config_toml['target']['aarch64-linux-android'] = { "linker": "aarch64-linux-android%s-clang" % android_api }
 with open(config_toml_path, 'w') as f:
     toml.dump(config_toml, f)
 
@@ -83,11 +90,26 @@ with open(make_linux_path, 'r') as file:
                         'override CXXFLAGS+=-mfloat-abi=hard -march=armv6zk -marm -mfpu=vfp -fexceptions -mno-unaligned-access -mtp=cp15 -mcpu=arm1176jzf-s',
                         'override CXXFLAGS+=-march=armv7-a -marm -mfpu=vfp -fexceptions'
                     )
+    # NDK + SSO(zeroidc): cargo builds for Android. rustc packs native static libs into a
+    # staticlib by default (link modifier +bundle), so the vendored OpenSSL (libssl.a /
+    # libcrypto.a) is already inside libzeroidc.a -- and Android has no libssl/libcrypto
+    # to link against anyway, so dropping -lssl -lcrypto is required here.
+    patch_ndk_sso = data.replace(
+                        '$(ZT_CARGO_FLAGS)', '$(ZT_CARGO_FLAGS) --target aarch64-linux-android --quiet'
+                    ).replace(
+                        'rustybits/target/debug/libzeroidc.a', 'rustybits/target/aarch64-linux-android/debug/libzeroidc.a'
+                    ).replace(
+                        'rustybits/target/release/libzeroidc.a', 'rustybits/target/aarch64-linux-android/release/libzeroidc.a'
+                    ).replace(
+                        'libzeroidc.a -ldl -lssl -lcrypto', 'libzeroidc.a -ldl'
+                    )
     
 with open(make_linux_path + '.aarch64', 'w') as file:
     file.write(patch_aarch64)
 with open(make_linux_path + '.arm', 'w') as file:
     file.write(patch_arm)
+with open(make_linux_path + '.ndk.sso', 'w') as file:
+    file.write(patch_ndk_sso)
 with open(make_linux_path + '.arm.ndk', 'w') as file:
     file.write(patch_arm_ndk)
 
