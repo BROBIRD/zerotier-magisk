@@ -33,7 +33,15 @@ with open(config_toml_path, 'w') as f:
 linux_tap_path = 'ZeroTierOne/osdep/LinuxEthernetTap.cpp'
 
 linux_tap_match1 = 'int rc = pthread_setaffinity_np(self, sizeof(cpu_set_t), &cpuset);'
-linux_tap_replace1 = 'int rc = sched_setaffinity(pthread_gettid_np(self), sizeof(cpu_set_t), &cpuset);'
+# bionic (NDK) has no pthread_setaffinity_np -> sched_setaffinity + pthread_gettid_np
+# glibc (GCC toolchains) has no pthread_gettid_np -> keep upstream pthread_setaffinity_np
+linux_tap_replace1 = '\n'.join((
+    '#if defined(__ANDROID__)',
+    'int rc = sched_setaffinity(pthread_gettid_np(self), sizeof(cpu_set_t), &cpuset);',
+    '#else',
+    'int rc = pthread_setaffinity_np(self, sizeof(cpu_set_t), &cpuset);',
+    '#endif',
+))
 
 linux_tap_match2 = '#include <sys/utsname.h>'
 linux_tap_replace2 = '#include <sys/utsname.h>\n#include <sched.h>'
@@ -64,7 +72,7 @@ with open(make_linux_path, 'r') as file:
                         'override CFLAGS+=-mfloat-abi=hard -march=armv7-a -marm -mfpu=vfp'
                     ).replace(
                         'override CXXFLAGS+=-mfloat-abi=hard -march=armv6zk -marm -mfpu=vfp -fexceptions -mno-unaligned-access -mtp=cp15 -mcpu=arm1176jzf-s',
-                        'override CFLAGS+=-mfloat-abi=hard -march=armv7-a -marm -mfpu=vfp -fexceptions'
+                        'override CXXFLAGS+=-mfloat-abi=hard -march=armv7-a -marm -mfpu=vfp -fexceptions'
                     )
     patch_arm_ndk = data.replace(
                         "$(shell $(CC) -dumpmachine | cut -d '-' -f 1)", 'armhf'
@@ -73,7 +81,7 @@ with open(make_linux_path, 'r') as file:
                         'override CFLAGS+=-march=armv7-a -marm -mfpu=vfp'
                     ).replace(
                         'override CXXFLAGS+=-mfloat-abi=hard -march=armv6zk -marm -mfpu=vfp -fexceptions -mno-unaligned-access -mtp=cp15 -mcpu=arm1176jzf-s',
-                        'override CFLAGS+=-march=armv7-a -marm -mfpu=vfp -fexceptions'
+                        'override CXXFLAGS+=-march=armv7-a -marm -mfpu=vfp -fexceptions'
                     )
     
 with open(make_linux_path + '.aarch64', 'w') as file:
