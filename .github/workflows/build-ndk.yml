@@ -2,12 +2,11 @@ name: build with NDK toolchains
 
 on:
   workflow_dispatch:
-  push:
-    tags: ['*']
+  workflow_call:
 
 env:
-  api_version: 28 # min. 21
-  ndk: r28 # android-ndk-$ndk-linux.zip
+  api_version: 30 # min. 21
+  ndk: r30 # android-ndk-$ndk-linux.zip
 
 jobs:
   build:
@@ -114,9 +113,8 @@ jobs:
           zip -r ../zerotier-magisk-arm-ndk-${{ github.ref_name }}.zip .
           cd ..
 
-      - name: Create release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+      - name: Upload module zips
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.ref_name }}
-          files: zerotier-magisk-*.zip
+          name: ndk-release-assets
+          path: zerotier-magisk-*.zip

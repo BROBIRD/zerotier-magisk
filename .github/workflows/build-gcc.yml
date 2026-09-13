@@ -2,8 +2,7 @@ name: build with GCC toolchains
 
 on:
   workflow_dispatch:
-  push:
-    tags: ['*']
+  workflow_call:
 
 jobs:
   build:
@@ -116,9 +115,8 @@ jobs:
           zip -r ../zerotier-magisk-arm-gcc-${{ github.ref_name }}.zip .
           cd ..
 
-      - name: Create release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+      - name: Upload module zips
+        uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.ref_name }}
-          files: zerotier-magisk-*.zip
+          name: gcc-release-assets
+          path: zerotier-magisk-*.zip

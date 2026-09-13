@@ -1,0 +1,46 @@
+name: build all
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['*']
+
+permissions:
+  contents: write
+
+jobs:
+  app:
+    name: build app
+    uses: ./.github/workflows/build-app.yml
+
+  gcc:
+    name: build with GCC toolchains
+    uses: ./.github/workflows/build-gcc.yml
+
+  ndk:
+    name: build with NDK toolchains
+    uses: ./.github/workflows/build-ndk.yml
+
+  release:
+    name: publish release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [app, gcc, ndk]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect release assets
+        run: |
+          mkdir -p dist
+          find artifacts -type f \( -name 'zerotier-magisk-*.zip' -o -name 'zerotier-magisk-*.apk' \) -print -exec cp -f {} dist/ \;
+          ls -lh dist
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          files: dist/*
