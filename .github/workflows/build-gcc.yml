@@ -31,6 +31,8 @@ jobs:
           rustup target add aarch64-unknown-linux-gnu
 
           sudo dpkg --add-architecture arm64
+          sudo mv /etc/apt/sources.list.d/ubuntu.sources /root/ubuntu.sources.bak
+          sudo rm -rf /var/lib/apt/lists/*
           sudo mv build/sources.list /etc/apt/sources.list
           apt modernize
           sudo apt-get update -qqy
