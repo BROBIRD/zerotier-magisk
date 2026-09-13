@@ -17,7 +17,18 @@ jobs:
 
       - name: Get latest ZeroTier release tag
         id: ztversion
-        run: echo "tag=$(curl -fsSL https://api.github.com/repos/zerotier/ZeroTierOne/releases/latest | jq -r .tag_name)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # unauthenticated api.github.com is capped at 60 req/h per IP, which GitHub
+          # runners hit constantly; an empty tag makes checkout fall back to the default
+          # branch (dev), where rustybits/zeroidc does not exist. Fail loudly instead.
+          tag=$(gh api repos/zerotier/ZeroTierOne/releases/latest --jq .tag_name)
+          if [ -z "$tag" ] || [ "$tag" = "null" ]; then
+            echo "::error::could not resolve the latest ZeroTierOne release tag"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
       - name: Checkout ZeroTierOne
         uses: actions/checkout@v4
