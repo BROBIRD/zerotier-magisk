@@ -62,6 +62,26 @@ with open(linux_tap_path, 'w') as file:
 
 # -------------------------------------------------------------------------------------------------------
 
+# Patch ZeroTierOne/rustybits/zeroidc/src/{lib.rs,ext.rs}
+
+# zeroidc gates its whole implementation on linux/windows/macos, so it compiles to an
+# empty crate on Android ("no `ZeroIDC` in the root"). Add Android arm64 to the same
+# `cfg(any(...))` gate -- the gated code uses nothing Linux-specific.
+
+gate_match = 'all(target_os = "linux", target_arch = "aarch64"),'
+gate_replace = gate_match + '\n    all(target_os = "android", target_arch = "aarch64"),'
+
+for zeroidc_src in ('ZeroTierOne/rustybits/zeroidc/src/lib.rs',
+                    'ZeroTierOne/rustybits/zeroidc/src/ext.rs'):
+    with open(zeroidc_src, 'r') as file:
+        data = file.read()
+    if gate_match not in data:
+        raise SystemExit('%s: zeroidc platform gate not found -- upstream changed?' % zeroidc_src)
+    with open(zeroidc_src, 'w') as file:
+        file.write(data.replace(gate_match, gate_replace))
+
+# -------------------------------------------------------------------------------------------------------
+
 # Patch make-linux.mk
 
 make_linux_path = 'ZeroTierOne/make-linux.mk'
